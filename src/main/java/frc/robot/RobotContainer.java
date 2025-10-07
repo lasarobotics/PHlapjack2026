@@ -41,8 +41,8 @@ public class RobotContainer {
     zeroRelativeEncoders();
     m_driveSubsystem.offset180();
     CameraServer.startAutomaticCapture();
-    CvSink cvsink = CameraServer.getVideo();
-    CvSource outputStream = CameraServer.putVideo("bLUR", 640, 480);
+    // CvSink cvsink = CameraServer.getVideo();
+    // CvSource outputStream = CameraServer.putVideo("bLUR", 640, 480);
   }
 
   /**
