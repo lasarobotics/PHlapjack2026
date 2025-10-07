@@ -36,13 +36,15 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
 
             @Override
             public void execute() {
-                if (m_autoTimer.hasElapsed(Constants.Swerve.AUTO_DRIVE_TIME)) {
-                    return;
+                if (!m_autoTimer.hasElapsed(Constants.Swerve.AUTO_DRIVE_TIME)) {
+                    // left stick backwards 0.25
+                    // (towards the driver station)
+                    // horizontally centered
+                    // no rotation
+                    getInstance().drive(0, Constants.Swerve.AUTO_FORWARD_SPEED, 0);
+                } else {
+                    getInstance().drive(0, 0, 0);
                 }
-                // left stick forward 0.1
-                // horizontally centered
-                // no rotation
-                getInstance().drive(0.25, 0, 0);
             }
 
             @Override
@@ -134,5 +136,11 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         swerveDrive.zeroHeading();
     }
 
+    public void offset180() {
+        swerveDrive.offset180();
+    }
+
     public void close() {}
 }
+
+//henry wuz here

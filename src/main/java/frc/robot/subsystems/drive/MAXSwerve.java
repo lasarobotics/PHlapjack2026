@@ -7,6 +7,7 @@ package frc.robot.subsystems.drive;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
+//imports wpi libraries
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
@@ -162,6 +163,12 @@ public class MAXSwerve {
   /** Zeroes the heading of the robot. */
   public void zeroHeading() {
     m_gyro.reset();
+    // Figure out how to zero correctly TODO
+    m_gyro.setAngleAdjustment(0);
+  }
+
+  public void offset180() {
+    m_gyro.setAngleAdjustment(180);
   }
 
   /**

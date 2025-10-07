@@ -38,7 +38,7 @@ public final class Constants {
     public static final double STOW = -0.5;
     public static final double SCORE = -5.0;
     public static final double INTAKE = -17.35;
-    public static final double INTAKE_HIGH = -5.0;
+    public static final double INTAKE_HIGH = -2.5;
   }
 
   public static class CoralArmPID {
@@ -56,14 +56,17 @@ public final class Constants {
   public static class ClimbHardware {
     public static final int CLIMB_MOTOR_ID = 61;
     public static final Current CLIMB_MOTOR_CURRENT_LIMIT = Units.Amps.of(70);
+    public static final double DEADBAND_TIME = 0.25;
+    public static final double END_TIMEOUT = 2;
   }
   
   public static class Swerve {
     public static final double MAX_SPEED = 4.4196; // 14.5 feet to meters
-    public static final double DEADBAND = 0.1;
+    public static final double DEADBAND = 0.08;
     public static final double TRANSLATION_SCALE = 0.8;
-    public static final double GIMP_SCALE = 0.1;
-    public static final double AUTO_DRIVE_TIME = 1.5;
+    public static final double GIMP_SCALE = 0.45;
+    public static final double AUTO_DRIVE_TIME = 2;
+    public static final double AUTO_FORWARD_SPEED = -0.15;
   }
 
   public static final class DriveConstants {

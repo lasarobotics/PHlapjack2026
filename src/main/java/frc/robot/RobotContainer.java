@@ -7,11 +7,13 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.coral.CoralSubsystem;
 import frc.robot.subsystems.drive.DriveSubsystem;
-// import frc.robot.subsystems.algae.AlgaeSubsystem;
 import frc.robot.subsystems.climb.ClimbSubsystem;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -37,6 +39,10 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
     zeroRelativeEncoders();
+    m_driveSubsystem.offset180();
+    CameraServer.startAutomaticCapture();
+    CvSink cvsink = CameraServer.getVideo();
+    CvSource outputStream = CameraServer.putVideo("bLUR", 640, 480);
   }
 
   /**
@@ -78,9 +84,10 @@ public class RobotContainer {
     m_coralSubsystem.configureBindings(
       PRIMARY_CONTROLLER.x(),                 // cancel
       PRIMARY_CONTROLLER.rightBumper(),       // intake coral
-      PRIMARY_CONTROLLER.y(),
+      PRIMARY_CONTROLLER.y(),                 // coral station intake
       PRIMARY_CONTROLLER.rightTrigger(),      // score coral
-      PRIMARY_CONTROLLER.back()               // regurgitate
+      PRIMARY_CONTROLLER.back(),              // regurgitate
+      PRIMARY_CONTROLLER.povUp()              // emergency arm zro
     );
   }
 
