@@ -9,9 +9,12 @@ import org.littletonrobotics.junction.Logger;
 
 import org.lasarobotics.fsm.StateMachine;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.Constants;
 
 public class DriveSubsystem extends StateMachine implements AutoCloseable {
@@ -72,6 +75,16 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private DoubleSupplier m_leftY;
     private DoubleSupplier m_rightX;
     private BooleanSupplier m_reset;
+    private BooleanSupplier m_autoSequence;
+
+    private boolean m_autoRunning;
+    private boolean m_autoFinishedWhileHeld;
+    private int m_autoStage;
+    private Pose2d[] m_autoTargets = new Pose2d[3];
+    private double m_autoLeftX;
+    private double m_autoLeftY;
+    private double m_autoRightX;
+    private boolean m_autoOverrideActive;
 
     public static DriveSubsystem getInstance() {
         if (s_driveSubsystemInstance == null) {
@@ -90,22 +103,30 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
             DoubleSupplier leftX,
             DoubleSupplier leftY,
             DoubleSupplier rightX,
-            BooleanSupplier reset) {
+            BooleanSupplier reset,
+            BooleanSupplier autoSequence) {
         m_leftX = leftX;
         m_leftY = leftY;
         m_rightX = rightX;
         m_reset = reset;
+        m_autoSequence = autoSequence;
     }
 
     public void drive() {
-        Logger.recordOutput("DriveSubsystem/Inputs/LeftX", m_leftX.getAsDouble());
-        Logger.recordOutput("DriveSubsystem/Inputs/LeftY", m_leftY.getAsDouble());
-        Logger.recordOutput("DriveSubsystem/Inputs/RightX", m_rightX.getAsDouble());
-        
+        updateAutoSequence();
+
+        double commandedLeftX = m_autoOverrideActive ? m_autoLeftX : m_leftX.getAsDouble();
+        double commandedLeftY = m_autoOverrideActive ? m_autoLeftY : m_leftY.getAsDouble();
+        double commandedRightX = m_autoOverrideActive ? m_autoRightX : m_rightX.getAsDouble();
+
+        Logger.recordOutput("DriveSubsystem/Inputs/LeftX", commandedLeftX);
+        Logger.recordOutput("DriveSubsystem/Inputs/LeftY", commandedLeftY);
+        Logger.recordOutput("DriveSubsystem/Inputs/RightX", commandedRightX);
+
         swerveDrive.drive(
-            m_leftX.getAsDouble() * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxSpeedMetersPerSecond * Constants.Swerve.TRANSLATION_SCALE,
-            m_leftY.getAsDouble() * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxSpeedMetersPerSecond * Constants.Swerve.TRANSLATION_SCALE,
-            m_rightX.getAsDouble() * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxAngularSpeed,
+            commandedLeftX * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxSpeedMetersPerSecond * Constants.Swerve.TRANSLATION_SCALE,
+            commandedLeftY * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxSpeedMetersPerSecond * Constants.Swerve.TRANSLATION_SCALE,
+            commandedRightX * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxAngularSpeed,
             true
         );
     }
@@ -124,12 +145,135 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     } 
 
     public void periodic() {
-        if (m_reset.getAsBoolean())
-            zeroGyro();
+        if (m_reset.getAsBoolean()) {
+            zeroOdometry();
+        }
         swerveDrive.periodic();
-        Logger.recordOutput("DriveSubsystem/pose", swerveDrive.getPose());
-        Logger.recordOutput("DriveSubsystem/heading", swerveDrive.getHeading());
+        SwerveModulePosition[] modulePositions = swerveDrive.getModulePositions();
+        Logger.recordOutput("DriveSubsystem/Odometry/Pose", swerveDrive.getPose());
+        Logger.recordOutput("DriveSubsystem/Odometry/HeadingDegrees", swerveDrive.getHeading());
+        Logger.recordOutput(
+            "DriveSubsystem/Odometry/WheelDistancesMeters",
+            new double[] {
+                modulePositions[0].distanceMeters,
+                modulePositions[1].distanceMeters,
+                modulePositions[2].distanceMeters,
+                modulePositions[3].distanceMeters
+            });
         Logger.recordOutput(getName() + "/state", getState().toString());
+    }
+
+    public void zeroOdometry() {
+        swerveDrive.resetEncoders();
+        swerveDrive.zeroHeading();
+        swerveDrive.resetOdometry(new Pose2d());
+    }
+
+    private void updateAutoSequence() {
+        boolean autoRequested = m_autoSequence != null && m_autoSequence.getAsBoolean();
+
+        if (!autoRequested) {
+            m_autoRunning = false;
+            m_autoFinishedWhileHeld = false;
+            m_autoOverrideActive = false;
+            return;
+        }
+
+        if (m_autoFinishedWhileHeld) {
+            m_autoOverrideActive = false;
+            return;
+        }
+
+        if (!m_autoRunning) {
+            startAutoSequence();
+        }
+
+        if (m_autoRunning) {
+            runAutoSequence();
+        }
+    }
+
+    private void startAutoSequence() {
+        Pose2d current = swerveDrive.getPose();
+        Pose2d[] candidates = new Pose2d[] {
+            Constants.AZ_bumpRed1_posa,
+            Constants.AZ_bumpRed2_posa,
+            Constants.AZ_bumpBlue1_posa,
+            Constants.AZ_bumpBlue2_posa
+        };
+        double bestDistance = Double.MAX_VALUE;
+        int bestIndex = 0;
+        for (int i = 0; i < candidates.length; i++) {
+            double dist = current.getTranslation().getDistance(candidates[i].getTranslation());
+            if (dist < bestDistance) {
+                bestDistance = dist;
+                bestIndex = i;
+            }
+        }
+
+        switch (bestIndex) {
+            case 0 -> {
+                m_autoTargets[0] = Constants.AZ_bumpRed1_posa;
+                m_autoTargets[1] = Constants.AZ_bumpRed1_posb;
+                m_autoTargets[2] = Constants.AZ_bumpRed1_posc;
+            }
+            case 1 -> {
+                m_autoTargets[0] = Constants.AZ_bumpRed2_posa;
+                m_autoTargets[1] = Constants.AZ_bumpRed2_posb;
+                m_autoTargets[2] = Constants.AZ_bumpRed2_posc;
+            }
+            case 2 -> {
+                m_autoTargets[0] = Constants.AZ_bumpBlue1_posa;
+                m_autoTargets[1] = Constants.AZ_bumpBlue1_posb;
+                m_autoTargets[2] = Constants.AZ_bumpBlue1_posc;
+            }
+            case 3 -> {
+                m_autoTargets[0] = Constants.AZ_bumpBlue2_posa;
+                m_autoTargets[1] = Constants.AZ_bumpBlue2_posb;
+                m_autoTargets[2] = Constants.AZ_bumpBlue2_posc;
+            }
+        }
+
+        m_autoStage = 0;
+        m_autoRunning = true;
+        m_autoOverrideActive = true;
+    }
+
+    private void runAutoSequence() {
+        Pose2d current = swerveDrive.getPose();
+        Pose2d targetPose = m_autoTargets[m_autoStage];
+        double targetHeading = m_autoStage < 2 ? Math.PI / 4.0 : 0.0;
+
+        double dx = targetPose.getX() - current.getX();
+        double dy = targetPose.getY() - current.getY();
+        double distance = Math.hypot(dx, dy);
+
+        double translationKp = 1.2;
+        double rotationKp = 2.5;
+
+        double forwardCmd = MathUtil.clamp(dx * translationKp, -1.0, 1.0);
+        double strafeCmd = MathUtil.clamp(dy * translationKp, -1.0, 1.0);
+
+        double headingError = MathUtil.angleModulus(targetHeading - current.getRotation().getRadians());
+        double rotationCmd = MathUtil.clamp(headingError * rotationKp, -1.0, 1.0);
+
+        double positionTolerance = 0.05;
+        double headingTolerance = Math.toRadians(3.0);
+
+        if (distance < positionTolerance && Math.abs(headingError) < headingTolerance) {
+            m_autoStage++;
+            if (m_autoStage >= m_autoTargets.length) {
+                m_autoRunning = false;
+                m_autoOverrideActive = false;
+                m_autoFinishedWhileHeld = true;
+                return;
+            }
+        }
+
+        m_autoLeftY = forwardCmd;
+        m_autoLeftX = strafeCmd;
+        m_autoRightX = rotationCmd;
+        m_autoOverrideActive = true;
     }
 
     public void zeroGyro() {

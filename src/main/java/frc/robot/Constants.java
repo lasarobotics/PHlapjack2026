@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.units.Units;
@@ -19,6 +21,22 @@ import edu.wpi.first.units.measure.Current;
  */
 public final class Constants {
   public static final double EPSILON = 0.000001; // lgtm
+  public static final double GO_OVER_BUMP_SPEED_SCALAR = 0.5;
+  public static final double GO_DOWN_BUMP_SPEED_SCALAR = 0.5;
+  public static final Pose2d AZ_bumpRed1_posa = new Pose2d(12.846304, 2.498344, new Rotation2d(Math.PI / 4));
+  public static final Pose2d AZ_bumpRed2_posa = new Pose2d(12.846304, 5.546344, new Rotation2d(Math.PI / 4));
+  public static final Pose2d AZ_bumpBlue1_posa = new Pose2d(3.661664, 2.498344, new Rotation2d(Math.PI / 4));
+  public static final Pose2d AZ_bumpBlue2_posa = new Pose2d(3.661664, 5.546344, new Rotation2d(Math.PI / 4));
+
+  public static final Pose2d AZ_bumpRed1_posb = new Pose2d(11.938, 2.498344, new Rotation2d(Math.PI / 4));
+  public static final Pose2d AZ_bumpRed2_posb = new Pose2d(11.938, 5.546344, new Rotation2d(Math.PI / 4));
+  public static final Pose2d AZ_bumpBlue1_posb = new Pose2d(4.6482, 2.498344, new Rotation2d(Math.PI / 4));
+  public static final Pose2d AZ_bumpBlue2_posb = new Pose2d(4.6482, 5.546344, new Rotation2d(Math.PI / 4));
+
+  public static final Pose2d AZ_bumpRed1_posc = new Pose2d(13.0048, 2.498344, new Rotation2d(0));
+  public static final Pose2d AZ_bumpRed2_posc = new Pose2d(13.0048, 5.546344, new Rotation2d(0));
+  public static final Pose2d AZ_bumpBlue1_posc = new Pose2d(5.715, 2.498344, new Rotation2d(0));
+  public static final Pose2d AZ_bumpBlue2_posc = new Pose2d(5.715, 5.546344, new Rotation2d(0));
 
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
@@ -59,7 +77,7 @@ public final class Constants {
     public static final double DEADBAND_TIME = 0.25;
     public static final double END_TIMEOUT = 2;
   }
-  
+
   public static class Swerve {
     public static final double MAX_SPEED = 4.4196; // 14.5 feet to meters
     public static final double DEADBAND = 0.08;

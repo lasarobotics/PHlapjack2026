@@ -5,18 +5,13 @@
 package frc.robot;
 
 import frc.robot.Constants.OperatorConstants;
-import frc.robot.subsystems.coral.CoralSubsystem;
 import frc.robot.subsystems.drive.DriveSubsystem;
-import frc.robot.subsystems.climb.ClimbSubsystem;
 
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.cscore.CvSink;
-import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -29,8 +24,6 @@ public class RobotContainer {
   private final CommandXboxController PRIMARY_CONTROLLER =
       new CommandXboxController(OperatorConstants.kDriverControllerPort);
   // The robot's subsystems and commands are defined here...
-  private final CoralSubsystem m_coralSubsystem = CoralSubsystem.getInstance();
-  private final ClimbSubsystem m_climbSubsystem = ClimbSubsystem.getInstance();  
   public final DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
 
 
@@ -39,7 +32,6 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
     zeroRelativeEncoders();
-    m_driveSubsystem.offset180();
     CameraServer.startAutomaticCapture();
     // CvSink cvsink = CameraServer.getVideo();
     // CvSource outputStream = CameraServer.putVideo("bLUR", 640, 480);
@@ -75,24 +67,12 @@ public class RobotContainer {
         Logger.recordOutput("RobotContainer/Inputs/RightX", rightX);
         return MathUtil.applyDeadband(-rightX, Constants.Swerve.DEADBAND);
       },    // drive rotate
-      PRIMARY_CONTROLLER.start()
-    );
-    m_climbSubsystem.configureBindings(
-      PRIMARY_CONTROLLER.x(),                 // cancel
-      PRIMARY_CONTROLLER.b()                  // climber management
-    );
-    m_coralSubsystem.configureBindings(
-      PRIMARY_CONTROLLER.x(),                 // cancel
-      PRIMARY_CONTROLLER.rightBumper(),       // intake coral
-      PRIMARY_CONTROLLER.y(),                 // coral station intake
-      PRIMARY_CONTROLLER.rightTrigger(),      // score coral
-      PRIMARY_CONTROLLER.back(),              // regurgitate
-      PRIMARY_CONTROLLER.povUp()              // emergency arm zro
+      PRIMARY_CONTROLLER.x(),
+      PRIMARY_CONTROLLER.b()
     );
   }
 
   private void zeroRelativeEncoders() {
-    m_coralSubsystem.zeroRelativeEncoders();
-    m_driveSubsystem.zeroGyro();
+    m_driveSubsystem.zeroOdometry();
   }
 }
