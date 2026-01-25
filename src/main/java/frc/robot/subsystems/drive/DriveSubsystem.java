@@ -115,18 +115,35 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     public void drive() {
         updateAutoSequence();
 
-        double commandedLeftX = m_autoOverrideActive ? m_autoLeftX : m_leftX.getAsDouble();
-        double commandedLeftY = m_autoOverrideActive ? m_autoLeftY : m_leftY.getAsDouble();
-        double commandedRightX = m_autoOverrideActive ? m_autoRightX : m_rightX.getAsDouble();
+        double commandedLeftX =
+            m_autoOverrideActive
+                ? m_autoLeftX
+                : m_leftX.getAsDouble()
+                    * Constants.Swerve.GIMP_SCALE
+                    * Constants.DriveConstants.kMaxSpeedMetersPerSecond
+                    * Constants.Swerve.TRANSLATION_SCALE;
+        double commandedLeftY =
+            m_autoOverrideActive
+                ? m_autoLeftY
+                : m_leftY.getAsDouble()
+                    * Constants.Swerve.GIMP_SCALE
+                    * Constants.DriveConstants.kMaxSpeedMetersPerSecond
+                    * Constants.Swerve.TRANSLATION_SCALE;
+        double commandedRightX =
+            m_autoOverrideActive
+                ? m_autoRightX
+                : m_rightX.getAsDouble()
+                    * Constants.Swerve.GIMP_SCALE
+                    * Constants.DriveConstants.kMaxAngularSpeed;
 
         Logger.recordOutput("DriveSubsystem/Inputs/LeftX", commandedLeftX);
         Logger.recordOutput("DriveSubsystem/Inputs/LeftY", commandedLeftY);
         Logger.recordOutput("DriveSubsystem/Inputs/RightX", commandedRightX);
 
         swerveDrive.drive(
-            commandedLeftX * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxSpeedMetersPerSecond * Constants.Swerve.TRANSLATION_SCALE,
-            commandedLeftY * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxSpeedMetersPerSecond * Constants.Swerve.TRANSLATION_SCALE,
-            commandedRightX * Constants.Swerve.GIMP_SCALE * Constants.DriveConstants.kMaxAngularSpeed,
+            commandedLeftX,
+            commandedLeftY,
+            commandedRightX,
             true
         );
     }
@@ -251,11 +268,23 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         double translationKp = 1.2;
         double rotationKp = 2.5;
 
-        double forwardCmd = MathUtil.clamp(dx * translationKp, -1.0, 1.0);
-        double strafeCmd = MathUtil.clamp(dy * translationKp, -1.0, 1.0);
+        double forwardCmd =
+            MathUtil.clamp(
+                dx * translationKp,
+                -Constants.DriveConstants.kMaxSpeedMetersPerSecond,
+                Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+        double strafeCmd =
+            MathUtil.clamp(
+                dy * translationKp,
+                -Constants.DriveConstants.kMaxSpeedMetersPerSecond,
+                Constants.DriveConstants.kMaxSpeedMetersPerSecond);
 
         double headingError = MathUtil.angleModulus(targetHeading - current.getRotation().getRadians());
-        double rotationCmd = MathUtil.clamp(headingError * rotationKp, -1.0, 1.0);
+        double rotationCmd =
+            MathUtil.clamp(
+                headingError * rotationKp,
+                -Constants.DriveConstants.kMaxAngularSpeed,
+                Constants.DriveConstants.kMaxAngularSpeed);
 
         double positionTolerance = 0.05;
         double headingTolerance = Math.toRadians(3.0);

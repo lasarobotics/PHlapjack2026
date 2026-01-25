@@ -94,9 +94,9 @@ public class MAXSwerve {
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
     // Convert the commanded speeds into the correct units for the drivetrain
-    double xSpeedDelivered = ySpeed * DriveConstants.kMaxSpeedMetersPerSecond;
-    double ySpeedDelivered = xSpeed * DriveConstants.kMaxSpeedMetersPerSecond;
-    double rotDelivered = rot * DriveConstants.kMaxAngularSpeed;
+    double xSpeedDelivered = ySpeed;
+    double ySpeedDelivered = xSpeed;
+    double rotDelivered = rot;
 
     var swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(
         fieldRelative
