@@ -32,7 +32,7 @@ class SimSwerveModule implements SwerveModuleIO {
     SwerveModuleState corrected = new SwerveModuleState();
     corrected.speedMetersPerSecond = desiredState.speedMetersPerSecond;
     corrected.angle = desiredState.angle.plus(chassisAngularOffset);
-    SwerveModuleState optimized = SwerveModuleState.optimize(corrected, rawState.angle);
+    SwerveModuleState optimized = optimizeState(corrected, rawState.angle);
     rawState = optimized;
   }
 
@@ -47,5 +47,14 @@ class SimSwerveModule implements SwerveModuleIO {
     double dt = now - lastTimestamp;
     distanceMeters += rawState.speedMetersPerSecond * dt;
     lastTimestamp = now;
+  }
+
+  private SwerveModuleState optimizeState(SwerveModuleState desiredState, Rotation2d currentAngle) {
+    double delta = desiredState.angle.minus(currentAngle).getRadians();
+    if (Math.abs(delta) > Math.PI / 2.0) {
+      return new SwerveModuleState(
+          -desiredState.speedMetersPerSecond, desiredState.angle.rotateBy(Rotation2d.fromRadians(Math.PI)));
+    }
+    return desiredState;
   }
 }
