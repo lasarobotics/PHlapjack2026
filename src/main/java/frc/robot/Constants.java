@@ -23,31 +23,35 @@ public final class Constants {
   public static final double EPSILON = 0.000001; // lgtm
   public static final Rotation2d ROT_45 = new Rotation2d(Math.PI / 4);
   public static final Rotation2d ROT_0 = new Rotation2d(0);
-  public static final double GO_OVER_BUMP_SPEED_SCALAR = 0.5;
-  public static final double GO_DOWN_BUMP_SPEED_SCALAR = 0.5;
-  private static final double BUMP_RED_BASE_X = 11.938;
-  private static final double BUMP_BLUE_BASE_X = 4.6482;
-  private static final double BUMP_LOW_Y = 2.498344;
-  private static final double BUMP_HIGH_Y = 5.546344;
+  public static final double GO_OVER_RAMP_SPEED_SCALAR = 0.5;
+  public static final double GO_DOWN_RAMP_SPEED_SCALAR = 0.5;
+  private static final double RAMP_RED_BASE_X = 11.938;
+  private static final double RAMP_BLUE_BASE_X = 4.6482;
+  private static final double RAMP_LOW_Y = 2.498344;
+  private static final double RAMP_HIGH_Y = 5.546344;
   private static final double POS_A_OFFSET_RED_X = 0.908304;
   private static final double POS_A_OFFSET_BLUE_X = -0.986536;
   private static final double POS_B_OFFSET_X = 0.0;
   private static final double POS_C_OFFSET_X = 1.0668;
 
-  public static final Pose2d AZ_bumpRed1_posa = new Pose2d(BUMP_RED_BASE_X + POS_A_OFFSET_RED_X, BUMP_LOW_Y, ROT_45);
-  public static final Pose2d AZ_bumpRed2_posa = new Pose2d(BUMP_RED_BASE_X + POS_A_OFFSET_RED_X, BUMP_HIGH_Y, ROT_45);
-  public static final Pose2d AZ_bumpBlue1_posa = new Pose2d(BUMP_BLUE_BASE_X + POS_A_OFFSET_BLUE_X, BUMP_LOW_Y, ROT_45);
-  public static final Pose2d AZ_bumpBlue2_posa = new Pose2d(BUMP_BLUE_BASE_X + POS_A_OFFSET_BLUE_X, BUMP_HIGH_Y, ROT_45);
+  public static final Pose2d AZ_rampRed1_posa = new Pose2d(RAMP_RED_BASE_X + POS_A_OFFSET_RED_X, RAMP_LOW_Y, ROT_45);
+  public static final Pose2d AZ_rampRed2_posa = new Pose2d(RAMP_RED_BASE_X + POS_A_OFFSET_RED_X, RAMP_HIGH_Y, ROT_45);
+  public static final Pose2d AZ_rampBlue1_posa = new Pose2d(RAMP_BLUE_BASE_X + POS_A_OFFSET_BLUE_X, RAMP_LOW_Y, ROT_45);
+  public static final Pose2d AZ_rampBlue2_posa = new Pose2d(RAMP_BLUE_BASE_X + POS_A_OFFSET_BLUE_X, RAMP_HIGH_Y, ROT_45);
 
-  public static final Pose2d AZ_bumpRed1_posb = new Pose2d(BUMP_RED_BASE_X + POS_B_OFFSET_X, BUMP_LOW_Y, ROT_45);
-  public static final Pose2d AZ_bumpRed2_posb = new Pose2d(BUMP_RED_BASE_X + POS_B_OFFSET_X, BUMP_HIGH_Y, ROT_45);
-  public static final Pose2d AZ_bumpBlue1_posb = new Pose2d(BUMP_BLUE_BASE_X + POS_B_OFFSET_X, BUMP_LOW_Y, ROT_45);
-  public static final Pose2d AZ_bumpBlue2_posb = new Pose2d(BUMP_BLUE_BASE_X + POS_B_OFFSET_X, BUMP_HIGH_Y, ROT_45);
+  public static final Pose2d AZ_rampRed1_posb = new Pose2d(RAMP_RED_BASE_X + POS_B_OFFSET_X, RAMP_LOW_Y, ROT_45);
+  public static final Pose2d AZ_rampRed2_posb = new Pose2d(RAMP_RED_BASE_X + POS_B_OFFSET_X, RAMP_HIGH_Y, ROT_45);
+  public static final Pose2d AZ_rampBlue1_posb = new Pose2d(RAMP_BLUE_BASE_X + POS_B_OFFSET_X, RAMP_LOW_Y, ROT_45);
+  public static final Pose2d AZ_rampBlue2_posb = new Pose2d(RAMP_BLUE_BASE_X + POS_B_OFFSET_X, RAMP_HIGH_Y, ROT_45);
 
-  public static final Pose2d AZ_bumpRed1_posc = new Pose2d(BUMP_RED_BASE_X + POS_C_OFFSET_X, BUMP_LOW_Y, ROT_0);
-  public static final Pose2d AZ_bumpRed2_posc = new Pose2d(BUMP_RED_BASE_X + POS_C_OFFSET_X, BUMP_HIGH_Y, ROT_0);
-  public static final Pose2d AZ_bumpBlue1_posc = new Pose2d(BUMP_BLUE_BASE_X + POS_C_OFFSET_X, BUMP_LOW_Y, ROT_0);
-  public static final Pose2d AZ_bumpBlue2_posc = new Pose2d(BUMP_BLUE_BASE_X + POS_C_OFFSET_X, BUMP_HIGH_Y, ROT_0);
+  public static final Pose2d AZ_rampRed1_posc = new Pose2d(RAMP_RED_BASE_X + POS_C_OFFSET_X, RAMP_LOW_Y, ROT_0);
+  public static final Pose2d AZ_rampRed2_posc = new Pose2d(RAMP_RED_BASE_X + POS_C_OFFSET_X, RAMP_HIGH_Y, ROT_0);
+  public static final Pose2d AZ_rampBlue1_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_LOW_Y, ROT_0);
+  public static final Pose2d AZ_rampBlue2_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_HIGH_Y, ROT_0);
+
+  public static final Pose2d[] AZ_RAMP_POSA_CANDIDATES = new Pose2d[] {
+      AZ_rampRed1_posa, AZ_rampRed2_posa, AZ_rampBlue1_posa, AZ_rampBlue2_posa
+  };
 
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;

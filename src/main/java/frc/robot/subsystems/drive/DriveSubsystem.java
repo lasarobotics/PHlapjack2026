@@ -85,6 +85,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private double m_autoLeftY;
     private double m_autoRightX;
     private boolean m_autoOverrideActive;
+    private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {1.0, 1.0, 1.0};
 
     public static DriveSubsystem getInstance() {
         if (s_driveSubsystemInstance == null) {
@@ -212,12 +213,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
 
     private void startAutoSequence() {
         Pose2d current = swerveDrive.getPose();
-        Pose2d[] candidates = new Pose2d[] {
-            Constants.AZ_bumpRed1_posa,
-            Constants.AZ_bumpRed2_posa,
-            Constants.AZ_bumpBlue1_posa,
-            Constants.AZ_bumpBlue2_posa
-        };
+        Pose2d[] candidates = Constants.AZ_RAMP_POSA_CANDIDATES;
         double bestDistance = Double.MAX_VALUE;
         int bestIndex = 0;
         for (int i = 0; i < candidates.length; i++) {
@@ -230,24 +226,24 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
 
         switch (bestIndex) {
             case 0 -> {
-                m_autoTargets[0] = Constants.AZ_bumpRed1_posa;
-                m_autoTargets[1] = Constants.AZ_bumpRed1_posb;
-                m_autoTargets[2] = Constants.AZ_bumpRed1_posc;
+                m_autoTargets[0] = Constants.AZ_rampRed1_posa;
+                m_autoTargets[1] = Constants.AZ_rampRed1_posb;
+                m_autoTargets[2] = Constants.AZ_rampRed1_posc;
             }
             case 1 -> {
-                m_autoTargets[0] = Constants.AZ_bumpRed2_posa;
-                m_autoTargets[1] = Constants.AZ_bumpRed2_posb;
-                m_autoTargets[2] = Constants.AZ_bumpRed2_posc;
+                m_autoTargets[0] = Constants.AZ_rampRed2_posa;
+                m_autoTargets[1] = Constants.AZ_rampRed2_posb;
+                m_autoTargets[2] = Constants.AZ_rampRed2_posc;
             }
             case 2 -> {
-                m_autoTargets[0] = Constants.AZ_bumpBlue1_posa;
-                m_autoTargets[1] = Constants.AZ_bumpBlue1_posb;
-                m_autoTargets[2] = Constants.AZ_bumpBlue1_posc;
+                m_autoTargets[0] = Constants.AZ_rampBlue1_posa;
+                m_autoTargets[1] = Constants.AZ_rampBlue1_posb;
+                m_autoTargets[2] = Constants.AZ_rampBlue1_posc;
             }
             case 3 -> {
-                m_autoTargets[0] = Constants.AZ_bumpBlue2_posa;
-                m_autoTargets[1] = Constants.AZ_bumpBlue2_posb;
-                m_autoTargets[2] = Constants.AZ_bumpBlue2_posc;
+                m_autoTargets[0] = Constants.AZ_rampBlue2_posa;
+                m_autoTargets[1] = Constants.AZ_rampBlue2_posb;
+                m_autoTargets[2] = Constants.AZ_rampBlue2_posc;
             }
         }
 
@@ -259,25 +255,28 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private void runAutoSequence() {
         Pose2d current = swerveDrive.getPose();
         Pose2d targetPose = m_autoTargets[m_autoStage];
-        double targetHeading = m_autoStage < 2 ? Math.PI / 4.0 : 0.0;
+        double targetHeading = m_autoStage < 2 ? Math.PI / 4.0 : 0.0; // TODO: choose heading per target
 
         double dx = targetPose.getX() - current.getX();
         double dy = targetPose.getY() - current.getY();
         double distance = Math.hypot(dx, dy);
 
-        double translationKp = 1.2;
+        double translationKp = 3.0;
         double rotationKp = 2.5;
+
+        double maxStageSpeed =
+            AUTO_STAGE_MAX_SPEED_MPS[Math.min(m_autoStage, AUTO_STAGE_MAX_SPEED_MPS.length - 1)];
 
         double forwardCmd =
             MathUtil.clamp(
                 dx * translationKp,
-                -Constants.DriveConstants.kMaxSpeedMetersPerSecond,
-                Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+                -maxStageSpeed,
+                maxStageSpeed);
         double strafeCmd =
             MathUtil.clamp(
                 dy * translationKp,
-                -Constants.DriveConstants.kMaxSpeedMetersPerSecond,
-                Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+                -maxStageSpeed,
+                maxStageSpeed);
 
         double headingError = MathUtil.angleModulus(targetHeading - current.getRotation().getRadians());
         double rotationCmd =
