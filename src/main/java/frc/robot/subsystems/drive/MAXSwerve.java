@@ -17,27 +17,26 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Constants.DriveConstants;
 
 public class MAXSwerve {
   // Create MAXSwerveModules
-  private final SwerveModuleIO m_frontLeft = createModule(
+  private final MAXSwerveModule m_frontLeft = new MAXSwerveModule(
       DriveConstants.kFrontLeftDrivingCanId,
       DriveConstants.kFrontLeftTurningCanId,
       DriveConstants.kFrontLeftChassisAngularOffset);
 
-  private final SwerveModuleIO m_frontRight = createModule(
+  private final MAXSwerveModule m_frontRight = new MAXSwerveModule(
       DriveConstants.kFrontRightDrivingCanId,
       DriveConstants.kFrontRightTurningCanId,
       DriveConstants.kFrontRightChassisAngularOffset);
 
-  private final SwerveModuleIO m_rearLeft = createModule(
+  private final MAXSwerveModule m_rearLeft = new MAXSwerveModule(
       DriveConstants.kRearLeftDrivingCanId,
       DriveConstants.kRearLeftTurningCanId,
       DriveConstants.kBackLeftChassisAngularOffset);
 
-  private final SwerveModuleIO m_rearRight = createModule(
+  private final MAXSwerveModule m_rearRight = new MAXSwerveModule(
       DriveConstants.kRearRightDrivingCanId,
       DriveConstants.kRearRightTurningCanId,
       DriveConstants.kBackRightChassisAngularOffset);
@@ -169,12 +168,5 @@ public class MAXSwerve {
    */
   public double getTurnRate() {
     return m_odometry.getTurnRate();
-  }
-
-  private SwerveModuleIO createModule(int driveCanId, int turnCanId, double chassisAngularOffset) {
-    if (RobotBase.isReal()) {
-      return new MAXSwerveModule(driveCanId, turnCanId, chassisAngularOffset);
-    }
-    return new SimSwerveModule(chassisAngularOffset);
   }
 }
