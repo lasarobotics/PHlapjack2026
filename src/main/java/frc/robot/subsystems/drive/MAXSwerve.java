@@ -18,6 +18,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.DriveConstants;
 
 public class MAXSwerve {
@@ -46,6 +47,8 @@ public class MAXSwerve {
   private final AHRS m_gyro = new AHRS(NavXComType.kMXP_SPI); 
 
   private final Odometry m_odometry = new Odometry(m_gyro, this::getModulePositions);
+  private Pose2d m_simPose = new Pose2d();
+  private double m_simLastTimestamp = Timer.getFPGATimestamp();
 
   /** Creates a new MAXSwerve. */
   public MAXSwerve() {
@@ -100,6 +103,7 @@ public class MAXSwerve {
     double rotDelivered = rot;
     if (!RobotBase.isReal()) {
       m_odometry.updateSimHeading(rotDelivered);
+      updateSimPose(xSpeedDelivered, ySpeedDelivered, rotDelivered, fieldRelative);
     }
 
     var swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(
@@ -179,5 +183,26 @@ public class MAXSwerve {
       return new MAXSwerveModule(driveCanId, turnCanId, chassisAngularOffset);
     }
     return new SimSwerveModule(chassisAngularOffset);
+  }
+
+  private void updateSimPose(double xSpeed, double ySpeed, double omega, boolean fieldRelative) {
+    double now = Timer.getFPGATimestamp();
+    double dt = now - m_simLastTimestamp;
+    m_simLastTimestamp = now;
+    ChassisSpeeds speeds =
+        fieldRelative
+            ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, omega, m_simPose.getRotation())
+            : new ChassisSpeeds(xSpeed, ySpeed, omega);
+    double heading = m_simPose.getRotation().getRadians();
+    double dxField = (speeds.vxMetersPerSecond * Math.cos(heading)
+        - speeds.vyMetersPerSecond * Math.sin(heading)) * dt;
+    double dyField = (speeds.vxMetersPerSecond * Math.sin(heading)
+        + speeds.vyMetersPerSecond * Math.cos(heading)) * dt;
+    double dTheta = speeds.omegaRadiansPerSecond * dt;
+    m_simPose = new Pose2d(
+        m_simPose.getX() + dxField,
+        m_simPose.getY() + dyField,
+        m_simPose.getRotation().plus(Rotation2d.fromRadians(dTheta)));
+    m_odometry.reset(m_simPose);
   }
 }

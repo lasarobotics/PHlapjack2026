@@ -86,6 +86,13 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private double m_autoRightX;
     private boolean m_autoOverrideActive;
     private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {1.0, 1.0, 1.0};
+    private static final double AUTO_STAGE_HOLD_SEC = 3.0;
+    private static final double AUTO_STAGE_TIMEOUT_SEC = 2.5;
+    private static final double AUTO_POSITION_TOLERANCE = 0.1;
+    private static final double AUTO_HEADING_TOLERANCE_RAD = Math.toRadians(8.0);
+    private boolean m_autoStageWaiting;
+    private double m_autoStageHoldStart;
+    private double m_autoStageTimeoutStart;
 
     public static DriveSubsystem getInstance() {
         if (s_driveSubsystemInstance == null) {
@@ -250,6 +257,9 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoStage = 0;
         m_autoRunning = true;
         m_autoOverrideActive = true;
+        m_autoStageWaiting = false;
+        m_autoStageHoldStart = 0.0;
+        m_autoStageTimeoutStart = Timer.getFPGATimestamp();
     }
 
     private void runAutoSequence() {
@@ -267,6 +277,33 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         double maxStageSpeed =
             AUTO_STAGE_MAX_SPEED_MPS[Math.min(m_autoStage, AUTO_STAGE_MAX_SPEED_MPS.length - 1)];
 
+        double headingError = MathUtil.angleModulus(targetHeading - current.getRotation().getRadians());
+        double rotationCmd =
+            MathUtil.clamp(
+                headingError * rotationKp,
+                -Constants.DriveConstants.kMaxAngularSpeed,
+                Constants.DriveConstants.kMaxAngularSpeed);
+
+        if (m_autoStageWaiting) {
+            if ((Timer.getFPGATimestamp() - m_autoStageHoldStart) >= AUTO_STAGE_HOLD_SEC) {
+                m_autoStage++;
+                m_autoStageWaiting = false;
+                if (m_autoStage >= m_autoTargets.length) {
+                    m_autoRunning = false;
+                    m_autoOverrideActive = false;
+                    m_autoFinishedWhileHeld = true;
+                    return;
+                }
+                m_autoStageTimeoutStart = Timer.getFPGATimestamp();
+            } else {
+                m_autoLeftY = 0.0;
+                m_autoLeftX = 0.0;
+                m_autoRightX = rotationCmd;
+                m_autoOverrideActive = true;
+                return;
+            }
+        }
+
         double forwardCmd =
             MathUtil.clamp(
                 dx * translationKp,
@@ -278,24 +315,18 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
                 -maxStageSpeed,
                 maxStageSpeed);
 
-        double headingError = MathUtil.angleModulus(targetHeading - current.getRotation().getRadians());
-        double rotationCmd =
-            MathUtil.clamp(
-                headingError * rotationKp,
-                -Constants.DriveConstants.kMaxAngularSpeed,
-                Constants.DriveConstants.kMaxAngularSpeed);
-
         double positionTolerance = 0.05;
         double headingTolerance = Math.toRadians(3.0);
 
-        if (distance < positionTolerance && Math.abs(headingError) < headingTolerance) {
-            m_autoStage++;
-            if (m_autoStage >= m_autoTargets.length) {
-                m_autoRunning = false;
-                m_autoOverrideActive = false;
-                m_autoFinishedWhileHeld = true;
-                return;
-            }
+        boolean positionReached = Math.abs(dx) < AUTO_POSITION_TOLERANCE && Math.abs(dy) < AUTO_POSITION_TOLERANCE;
+        boolean headingReached = Math.abs(headingError) < AUTO_HEADING_TOLERANCE_RAD;
+        boolean timedOut = (Timer.getFPGATimestamp() - m_autoStageTimeoutStart) > AUTO_STAGE_TIMEOUT_SEC;
+
+        if ((positionReached && headingReached) || timedOut) {
+            m_autoStageWaiting = true;
+            m_autoStageHoldStart = Timer.getFPGATimestamp();
+            forwardCmd = 0.0;
+            strafeCmd = 0.0;
         }
 
         m_autoLeftY = forwardCmd;
