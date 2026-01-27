@@ -202,7 +202,6 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
             m_autoFinishedWhileHeld = false;
             m_autoOverrideActive = false;
             m_autoStage = 0;
-            m_autoStageWaiting = false;
             return;
         }
 
@@ -265,7 +264,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private void runAutoSequence() {
         Pose2d current = swerveDrive.getPose();
         Pose2d targetPose = m_autoTargets[m_autoStage];
-        double targetHeading = m_autoStage < 2 ? Math.PI / 4.0 : 0.0; // TODO: choose heading per target
+        double targetHeading = targetPose.getRotation().getRadians();
 
         double dx = targetPose.getX() - current.getX();
         double dy = targetPose.getY() - current.getY();

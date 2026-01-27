@@ -44,8 +44,8 @@ public final class Constants {
   public static final Pose2d AZ_rampBlue1_posb = new Pose2d(RAMP_BLUE_BASE_X + POS_B_OFFSET_X, RAMP_LOW_Y, ROT_45);
   public static final Pose2d AZ_rampBlue2_posb = new Pose2d(RAMP_BLUE_BASE_X + POS_B_OFFSET_X, RAMP_HIGH_Y, ROT_45);
 
-  public static final Pose2d AZ_rampRed1_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_LOW_Y, ROT_0);
-  public static final Pose2d AZ_rampRed2_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_HIGH_Y, ROT_0);
+  public static final Pose2d AZ_rampRed1_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_LOW_Y, new Rotation2d(-Math.PI));
+  public static final Pose2d AZ_rampRed2_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_HIGH_Y, new Rotation2d(-Math.PI));
   public static final Pose2d AZ_rampBlue1_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_LOW_Y, ROT_0);
   public static final Pose2d AZ_rampBlue2_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_HIGH_Y, ROT_0);
 
