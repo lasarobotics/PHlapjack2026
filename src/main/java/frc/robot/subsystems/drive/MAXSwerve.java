@@ -98,6 +98,9 @@ public class MAXSwerve {
     double xSpeedDelivered = ySpeed;
     double ySpeedDelivered = xSpeed;
     double rotDelivered = rot;
+    if (!RobotBase.isReal()) {
+      m_odometry.updateSimHeading(rotDelivered);
+    }
 
     var swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(
         fieldRelative
