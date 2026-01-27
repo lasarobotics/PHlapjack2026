@@ -86,7 +86,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private double m_autoRightX;
     private boolean m_autoOverrideActive;
     private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {1.0, 1.0, 1.0};
-    private static final double AUTO_STAGE_HOLD_SEC = 3.0;
+    private static final double AUTO_STAGE_HOLD_SEC = 0.0;
     private static final double AUTO_STAGE_TIMEOUT_SEC = 2.5;
     private static final double AUTO_POSITION_TOLERANCE = 0.1;
     private static final double AUTO_HEADING_TOLERANCE_RAD = Math.toRadians(8.0);
@@ -201,6 +201,8 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
             m_autoRunning = false;
             m_autoFinishedWhileHeld = false;
             m_autoOverrideActive = false;
+            m_autoStage = 0;
+            m_autoStageWaiting = false;
             return;
         }
 
@@ -257,8 +259,6 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoStage = 0;
         m_autoRunning = true;
         m_autoOverrideActive = true;
-        m_autoStageWaiting = false;
-        m_autoStageHoldStart = 0.0;
         m_autoStageTimeoutStart = Timer.getFPGATimestamp();
     }
 
@@ -284,26 +284,6 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
                 -Constants.DriveConstants.kMaxAngularSpeed,
                 Constants.DriveConstants.kMaxAngularSpeed);
 
-        if (m_autoStageWaiting) {
-            if ((Timer.getFPGATimestamp() - m_autoStageHoldStart) >= AUTO_STAGE_HOLD_SEC) {
-                m_autoStage++;
-                m_autoStageWaiting = false;
-                if (m_autoStage >= m_autoTargets.length) {
-                    m_autoRunning = false;
-                    m_autoOverrideActive = false;
-                    m_autoFinishedWhileHeld = true;
-                    return;
-                }
-                m_autoStageTimeoutStart = Timer.getFPGATimestamp();
-            } else {
-                m_autoLeftY = 0.0;
-                m_autoLeftX = 0.0;
-                m_autoRightX = rotationCmd;
-                m_autoOverrideActive = true;
-                return;
-            }
-        }
-
         double forwardCmd =
             MathUtil.clamp(
                 dx * translationKp,
@@ -323,10 +303,19 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         boolean timedOut = (Timer.getFPGATimestamp() - m_autoStageTimeoutStart) > AUTO_STAGE_TIMEOUT_SEC;
 
         if ((positionReached && headingReached) || timedOut) {
-            m_autoStageWaiting = true;
-            m_autoStageHoldStart = Timer.getFPGATimestamp();
-            forwardCmd = 0.0;
-            strafeCmd = 0.0;
+            m_autoStage++;
+            if (m_autoStage >= m_autoTargets.length) {
+                m_autoRunning = false;
+                m_autoOverrideActive = false;
+                m_autoFinishedWhileHeld = true;
+                return;
+            }
+            m_autoStageTimeoutStart = Timer.getFPGATimestamp();
+            m_autoLeftY = 0.0;
+            m_autoLeftX = 0.0;
+            m_autoRightX = 0.0;
+            m_autoOverrideActive = true;
+            return;
         }
 
         m_autoLeftY = forwardCmd;

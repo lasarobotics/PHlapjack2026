@@ -76,6 +76,10 @@ public class MAXSwerve {
    */
   public void resetOdometry(Pose2d pose) {
     m_odometry.reset(pose);
+    if (!RobotBase.isReal()) {
+      m_simPose = pose;
+      m_simLastTimestamp = Timer.getFPGATimestamp();
+    }
   }
 
   public SwerveModulePosition[] getModulePositions() {
@@ -191,13 +195,10 @@ public class MAXSwerve {
     m_simLastTimestamp = now;
     ChassisSpeeds speeds =
         fieldRelative
-            ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, omega, m_simPose.getRotation())
-            : new ChassisSpeeds(xSpeed, ySpeed, omega);
-    double heading = m_simPose.getRotation().getRadians();
-    double dxField = (speeds.vxMetersPerSecond * Math.cos(heading)
-        - speeds.vyMetersPerSecond * Math.sin(heading)) * dt;
-    double dyField = (speeds.vxMetersPerSecond * Math.sin(heading)
-        + speeds.vyMetersPerSecond * Math.cos(heading)) * dt;
+            ? new ChassisSpeeds(xSpeed, ySpeed, omega)
+            : ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, omega, m_simPose.getRotation());
+    double dxField = speeds.vxMetersPerSecond * dt;
+    double dyField = speeds.vyMetersPerSecond * dt;
     double dTheta = speeds.omegaRadiansPerSecond * dt;
     m_simPose = new Pose2d(
         m_simPose.getX() + dxField,

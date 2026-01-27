@@ -25,14 +25,14 @@ public final class Constants {
   public static final Rotation2d ROT_0 = new Rotation2d(0);
   public static final double GO_OVER_RAMP_SPEED_SCALAR = 0.5;
   public static final double GO_DOWN_RAMP_SPEED_SCALAR = 0.5;
-  private static final double RAMP_RED_BASE_X = -11.938;
-  private static final double RAMP_BLUE_BASE_X = -4.6482;
+  private static final double RAMP_RED_BASE_X = 11.938;
+  private static final double RAMP_BLUE_BASE_X = 4.6482;
   private static final double RAMP_LOW_Y = 2.498344;
   private static final double RAMP_HIGH_Y = 5.546344;
-  private static final double POS_A_OFFSET_RED_X = -0.908304;
-  private static final double POS_A_OFFSET_BLUE_X = 0.986536;
-  private static final double POS_B_OFFSET_X = -0.0;
-  private static final double POS_C_OFFSET_X = -1.0668;
+  private static final double POS_A_OFFSET_RED_X = 0.908304;
+  private static final double POS_A_OFFSET_BLUE_X = -0.986536;
+  private static final double POS_B_OFFSET_X = 0.0;
+  private static final double POS_C_OFFSET_X = 1.0668;
 
   public static final Pose2d AZ_rampRed1_posa = new Pose2d(RAMP_RED_BASE_X + POS_A_OFFSET_RED_X, RAMP_LOW_Y, ROT_45);
   public static final Pose2d AZ_rampRed2_posa = new Pose2d(RAMP_RED_BASE_X + POS_A_OFFSET_RED_X, RAMP_HIGH_Y, ROT_45);
