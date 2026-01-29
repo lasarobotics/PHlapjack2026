@@ -270,6 +270,9 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoLeftX = 0.0;
         m_autoRightX = 0.0;
         m_autoOverrideActive = true;
+        Pose2d target = m_autoTargets[m_autoStage];
+        Logger.recordOutput("DriveSubsystem/Auto/StageIndex", m_autoStage);
+        Logger.recordOutput("DriveSubsystem/Auto/TargetPose", target);
     }
 
     private void runAutoSequence() {
