@@ -129,21 +129,18 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
             m_autoOverrideActive
                 ? m_autoLeftX
                 : m_leftX.getAsDouble()
-                    * Constants.Swerve.GIMP_SCALE
                     * Constants.DriveConstants.kMaxSpeedMetersPerSecond
                     * Constants.Swerve.TRANSLATION_SCALE;
         double commandedLeftY =
             m_autoOverrideActive
                 ? m_autoLeftY
                 : m_leftY.getAsDouble()
-                    * Constants.Swerve.GIMP_SCALE
                     * Constants.DriveConstants.kMaxSpeedMetersPerSecond
                     * Constants.Swerve.TRANSLATION_SCALE;
         double commandedRightX =
             m_autoOverrideActive
                 ? m_autoRightX
                 : m_rightX.getAsDouble()
-                    * Constants.Swerve.GIMP_SCALE
                     * Constants.DriveConstants.kMaxAngularSpeed;
 
         Logger.recordOutput("DriveSubsystem/Inputs/LeftX", commandedLeftX);
@@ -271,18 +268,18 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoRightX = 0.0;
         m_autoOverrideActive = true;
         Pose2d target = m_autoTargets[m_autoStage];
-        Logger.recordOutput("DriveSubsystem/Auto/StageIndex", m_autoStage);
-        Logger.recordOutput("DriveSubsystem/Auto/TargetPose", target);
     }
 
     private void runAutoSequence() {
         Pose2d current = swerveDrive.getPose();
         Pose2d targetPose = m_autoTargets[m_autoStage];
         double targetHeading = targetPose.getRotation().getRadians();
+        Logger.recordOutput("DriveSubsystem/Auto/StageIndex", m_autoStage);
+        Logger.recordOutput("DriveSubsystem/Auto/TargetPose", targetPose);
 
         double dx = targetPose.getX() - current.getX();
         double dy = targetPose.getY() - current.getY();
-        double translationKp = 1000.0;
+        double translationKp = 3;
         double rotationKp = 2.5;
 
         double maxStageSpeed =
@@ -297,7 +294,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
 
         double forwardCmd =
             MathUtil.clamp(
-                dx * translationKp,
+                dx * translationKp * 1000,
                 -maxStageSpeed,
                 maxStageSpeed);
         double strafeCmd =
