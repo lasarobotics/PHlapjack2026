@@ -31,8 +31,8 @@ public final class Constants {
   private static final double RAMP_HIGH_Y = 5.546344;
   private static final double POS_A_OFFSET_RED_X = 0.908304;
   private static final double POS_A_OFFSET_BLUE_X = -0.986536;
-  private static final double POS_B_OFFSET_X = 0.0;
-  private static final double POS_C_OFFSET_X = 1.0668;
+  private static final double POS_B_OFFSET_X = 0.1524;
+  private static final double POS_C_OFFSET_X = 1.0668+0.1524;
 
   public static final Pose2d AZ_rampRed1_posa = new Pose2d(RAMP_RED_BASE_X + POS_A_OFFSET_RED_X, RAMP_LOW_Y, new Rotation2d(-3 * Math.PI / 4));
   public static final Pose2d AZ_rampRed2_posa = new Pose2d(RAMP_RED_BASE_X + POS_A_OFFSET_RED_X, RAMP_HIGH_Y, new Rotation2d(-3 * Math.PI / 4));

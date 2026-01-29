@@ -86,6 +86,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private double m_autoRightX;
     private boolean m_autoOverrideActive;
     private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {1.0, 1.0, 1.0};
+    private static final double AUTO_STAGE_LINE_OFFSET_METERS = 0.9271;
     private static final double AUTO_STAGE_HOLD_SEC = 0.0;
     private static final double AUTO_STAGE_TIMEOUT_SEC = 2.5;
     private static final double AUTO_POSITION_TOLERANCE = 0.1;
@@ -93,6 +94,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private boolean m_autoStageWaiting;
     private double m_autoStageHoldStart;
     private double m_autoStageTimeoutStart;
+    private Pose2d m_autoStageStartPose = new Pose2d();
 
     public static DriveSubsystem getInstance() {
         if (s_driveSubsystemInstance == null) {
@@ -258,7 +260,16 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoStage = 0;
         m_autoRunning = true;
         m_autoOverrideActive = true;
+        beginAutoStage();
+    }
+
+    private void beginAutoStage() {
+        m_autoStageStartPose = swerveDrive.getPose();
         m_autoStageTimeoutStart = Timer.getFPGATimestamp();
+        m_autoLeftY = 0.0;
+        m_autoLeftX = 0.0;
+        m_autoRightX = 0.0;
+        m_autoOverrideActive = true;
     }
 
     private void runAutoSequence() {
@@ -268,9 +279,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
 
         double dx = targetPose.getX() - current.getX();
         double dy = targetPose.getY() - current.getY();
-        double distance = Math.hypot(dx, dy);
-
-        double translationKp = 3.0;
+        double translationKp = 1000.0;
         double rotationKp = 2.5;
 
         double maxStageSpeed =
@@ -294,14 +303,12 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
                 -maxStageSpeed,
                 maxStageSpeed);
 
-        double positionTolerance = 0.05;
-        double headingTolerance = Math.toRadians(3.0);
-
         boolean positionReached = Math.abs(dx) < AUTO_POSITION_TOLERANCE && Math.abs(dy) < AUTO_POSITION_TOLERANCE;
         boolean headingReached = Math.abs(headingError) < AUTO_HEADING_TOLERANCE_RAD;
         boolean timedOut = (Timer.getFPGATimestamp() - m_autoStageTimeoutStart) > AUTO_STAGE_TIMEOUT_SEC;
+        boolean crossedLine = hasCrossedProgressionLine(targetPose);
 
-        if ((positionReached && headingReached) || timedOut) {
+        if ((positionReached && headingReached) || timedOut || crossedLine) {
             m_autoStage++;
             if (m_autoStage >= m_autoTargets.length) {
                 m_autoRunning = false;
@@ -309,11 +316,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
                 m_autoFinishedWhileHeld = true;
                 return;
             }
-            m_autoStageTimeoutStart = Timer.getFPGATimestamp();
-            m_autoLeftY = 0.0;
-            m_autoLeftX = 0.0;
-            m_autoRightX = 0.0;
-            m_autoOverrideActive = true;
+            beginAutoStage();
             return;
         }
 
@@ -321,6 +324,28 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoLeftX = strafeCmd;
         m_autoRightX = rotationCmd;
         m_autoOverrideActive = true;
+    }
+
+    private boolean hasCrossedProgressionLine(Pose2d target) {
+        Pose2d current = swerveDrive.getPose();
+        double dxStart = target.getX() - m_autoStageStartPose.getX();
+        double dyStart = target.getY() - m_autoStageStartPose.getY();
+        boolean useXAsPrimary = Math.abs(dxStart) >= Math.abs(dyStart);
+        double offset = AUTO_STAGE_LINE_OFFSET_METERS;
+
+        if (useXAsPrimary) {
+            double approachDir = Math.signum(dxStart == 0.0 ? 1.0 : dxStart);
+            double lineX = target.getX() - (offset * approachDir);
+            return approachDir > 0
+                ? current.getX() >= lineX
+                : current.getX() <= lineX;
+        }
+
+        double approachDir = Math.signum(dyStart == 0.0 ? 1.0 : dyStart);
+        double lineY = target.getY() - (offset * approachDir);
+        return approachDir > 0
+            ? current.getY() >= lineY
+            : current.getY() <= lineY;
     }
 
     public void zeroGyro() {
