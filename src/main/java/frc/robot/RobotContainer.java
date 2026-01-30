@@ -68,7 +68,8 @@ public class RobotContainer {
         return MathUtil.applyDeadband(-rightX, Constants.Swerve.DEADBAND);
       },    // drive rotate
       PRIMARY_CONTROLLER.x(),
-      PRIMARY_CONTROLLER.b()
+      PRIMARY_CONTROLLER.b(),
+      PRIMARY_CONTROLLER.a()
     );
   }
 

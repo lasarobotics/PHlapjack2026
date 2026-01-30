@@ -3,18 +3,23 @@ package frc.robot.subsystems.drive;
 import java.io.File;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
+
+import org.lasarobotics.fsm.StateMachine;
 import org.lasarobotics.fsm.SystemState;
 import org.littletonrobotics.junction.Logger;
 
-import org.lasarobotics.fsm.StateMachine;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.Constants;
 
 public class DriveSubsystem extends StateMachine implements AutoCloseable {
@@ -76,6 +81,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private DoubleSupplier m_rightX;
     private BooleanSupplier m_reset;
     private BooleanSupplier m_autoSequence;
+    private BooleanSupplier m_goToToggle;
 
     private boolean m_autoRunning;
     private boolean m_autoFinishedWhileHeld;
@@ -91,10 +97,18 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private static final double AUTO_STAGE_TIMEOUT_SEC = 2.5;
     private static final double AUTO_POSITION_TOLERANCE = 0.1;
     private static final double AUTO_HEADING_TOLERANCE_RAD = Math.toRadians(8.0);
+    private static PIDController s_autoDrive;
+    private static PIDController s_headingController;
+    private boolean m_shouldGoTo;
+    private boolean m_lastGoToToggle;
     private boolean m_autoStageWaiting;
     private double m_autoStageHoldStart;
     private double m_autoStageTimeoutStart;
     private Pose2d m_autoStageStartPose = new Pose2d();
+    private static SwerveRequest.FieldCentric s_driveRobotCentric;
+
+
+
 
     public static DriveSubsystem getInstance() {
         if (s_driveSubsystemInstance == null) {
@@ -107,6 +121,10 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
             File directory) {
         super(DriveSubsystemStates.AUTO);
         swerveDrive = new MAXSwerve();
+
+        s_autoDrive = new PIDController(1, 0.0, 0.1);
+
+        s_headingController = new PIDController(0.5, 0.0, 0.1);
     }
 
     public void configureBindings(
@@ -114,45 +132,53 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
             DoubleSupplier leftY,
             DoubleSupplier rightX,
             BooleanSupplier reset,
-            BooleanSupplier autoSequence) {
+            BooleanSupplier autoSequence,
+            BooleanSupplier goToToggle
+            ) {
         m_leftX = leftX;
         m_leftY = leftY;
         m_rightX = rightX;
         m_reset = reset;
         m_autoSequence = autoSequence;
+        m_goToToggle = goToToggle;
+
     }
 
     public void drive() {
         updateAutoSequence();
 
-        double commandedLeftX =
-            m_autoOverrideActive
-                ? m_autoLeftX
-                : m_leftX.getAsDouble()
-                    * Constants.DriveConstants.kMaxSpeedMetersPerSecond
-                    * Constants.Swerve.TRANSLATION_SCALE;
-        double commandedLeftY =
-            m_autoOverrideActive
-                ? m_autoLeftY
-                : m_leftY.getAsDouble()
-                    * Constants.DriveConstants.kMaxSpeedMetersPerSecond
-                    * Constants.Swerve.TRANSLATION_SCALE;
-        double commandedRightX =
-            m_autoOverrideActive
-                ? m_autoRightX
-                : m_rightX.getAsDouble()
-                    * Constants.DriveConstants.kMaxAngularSpeed;
+        if(m_shouldGoTo) {
+            goTo(Constants.AZ_rampBlue1_posa);
+        } else {
+            double commandedLeftX =
+                m_autoOverrideActive
+                    ? m_autoLeftX
+                    : m_leftX.getAsDouble()
+                        * Constants.DriveConstants.kMaxSpeedMetersPerSecond
+                        * Constants.Swerve.TRANSLATION_SCALE;
+            double commandedLeftY =
+                m_autoOverrideActive
+                    ? m_autoLeftY
+                    : m_leftY.getAsDouble()
+                        * Constants.DriveConstants.kMaxSpeedMetersPerSecond
+                        * Constants.Swerve.TRANSLATION_SCALE;
+            double commandedRightX =
+                m_autoOverrideActive
+                    ? m_autoRightX
+                    : m_rightX.getAsDouble()
+                        * Constants.DriveConstants.kMaxAngularSpeed;
 
-        Logger.recordOutput("DriveSubsystem/Inputs/LeftX", commandedLeftX);
-        Logger.recordOutput("DriveSubsystem/Inputs/LeftY", commandedLeftY);
-        Logger.recordOutput("DriveSubsystem/Inputs/RightX", commandedRightX);
+            Logger.recordOutput("DriveSubsystem/Inputs/LeftX", commandedLeftX);
+            Logger.recordOutput("DriveSubsystem/Inputs/LeftY", commandedLeftY);
+            Logger.recordOutput("DriveSubsystem/Inputs/RightX", commandedRightX);
 
-        swerveDrive.drive(
-            commandedLeftX,
-            commandedLeftY,
-            commandedRightX,
-            true
-        );
+            swerveDrive.drive(
+                commandedLeftX,
+                commandedLeftY,
+                commandedRightX,
+                true
+            );
+        }
     }
 
     public void drive(double leftX, double leftY, double rightX) {
@@ -172,6 +198,17 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         if (m_reset.getAsBoolean()) {
             zeroOdometry();
         }
+
+        boolean goonerButtoning = m_goToToggle.getAsBoolean() && !m_lastGoToToggle;
+        m_lastGoToToggle = m_goToToggle.getAsBoolean();
+        
+        if (goonerButtoning) {
+            m_shouldGoTo = !m_shouldGoTo;
+        }
+
+        Logger.recordOutput("DriveSubsystem/Inputs/a", m_goToToggle.getAsBoolean());
+        Logger.recordOutput("DriveSubsystem/Inputs/shouldGoTo", m_shouldGoTo);
+        
         swerveDrive.periodic();
         SwerveModulePosition[] modulePositions = swerveDrive.getModulePositions();
         Logger.recordOutput("DriveSubsystem/Odometry/Pose", swerveDrive.getPose());
@@ -187,10 +224,51 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         Logger.recordOutput(getName() + "/state", getState().toString());
     }
 
+
     public void zeroOdometry() {
         swerveDrive.resetEncoders();
         swerveDrive.zeroHeading();
         swerveDrive.resetOdometry(new Pose2d());
+    }
+
+    private void goTo(Pose2d target) {
+        Logger.recordOutput("DriveSubsystem/Odometry/target", target);
+
+        Pose2d robotPose = swerveDrive.getPose();
+        Translation2d newPosition = target.getTranslation().minus(robotPose.getTranslation());
+
+        double distance = robotPose.getTranslation().getDistance(target.getTranslation());
+
+        Logger.recordOutput("DriveSubsystem/Odometry/distance", distance);
+
+        var directionOfTravel = newPosition.getAngle();
+
+        Logger.recordOutput("DriveSubsystem/Odometry/directionOfTravel", directionOfTravel);
+
+
+        var outputVelocity = Math.min(
+            Math.abs(s_autoDrive.calculate(distance, 0.0)), AUTO_STAGE_MAX_SPEED_MPS[0]
+          );
+
+        // how does it know to rotate the amount in the time it takes to get to target.
+        var rotationRate = Math.min(
+            Math.abs(s_headingController.calculate(robotPose.getRotation().getRadians())), target.getRotation().getRadians()
+        );
+
+        var xComponent = outputVelocity * directionOfTravel.getCos();
+        var yComponent = outputVelocity * directionOfTravel.getSin();
+
+        swerveDrive.drive(
+            yComponent,
+            xComponent,
+            rotationRate,
+            true
+        );
+
+        if(Math.abs(distance) < 0.5) {
+            m_shouldGoTo = false;
+        }
+
     }
 
     private void updateAutoSequence() {
