@@ -122,9 +122,11 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         super(DriveSubsystemStates.AUTO);
         swerveDrive = new MAXSwerve();
 
-        s_autoDrive = new PIDController(1, 0.0, 0.1);
+        s_autoDrive = new PIDController(1.75, 0.0, 0.0);
 
-        s_headingController = new PIDController(0.5, 0.0, 0.1);
+        s_headingController = new PIDController(3, 0.0, 0.5);
+
+        s_headingController.enableContinuousInput(-Math.PI, Math.PI);
     }
 
     public void configureBindings(
@@ -246,14 +248,15 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         Logger.recordOutput("DriveSubsystem/Odometry/directionOfTravel", directionOfTravel);
 
 
-        var outputVelocity = Math.min(
-            Math.abs(s_autoDrive.calculate(distance, 0.0)), AUTO_STAGE_MAX_SPEED_MPS[0]
-          );
+        var outputVelocity = 
+            Math.abs(s_autoDrive.calculate(distance, 0.0)) +0.2;
 
         // how does it know to rotate the amount in the time it takes to get to target.
-        var rotationRate = Math.min(
-            Math.abs(s_headingController.calculate(robotPose.getRotation().getRadians())), target.getRotation().getRadians()
-        );
+
+        var rotationRate = 
+            s_headingController.calculate(robotPose.getRotation().getRadians(), target.getRotation().getRadians());
+
+        
 
         var xComponent = outputVelocity * directionOfTravel.getCos();
         var yComponent = outputVelocity * directionOfTravel.getSin();
@@ -265,7 +268,10 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
             true
         );
 
-        if(Math.abs(distance) < 0.5) {
+        Logger.recordOutput("DriveSubsystem/Odometry/radiansToRotate", Math.abs(robotPose.getRotation().getRadians() - target.getRotation().getRadians()));
+
+
+        if(Math.abs(distance) < 0.2 && Math.abs(robotPose.getRotation().getRadians() - target.getRotation().getRadians()) < 0.1) {
             m_shouldGoTo = false;
         }
 
