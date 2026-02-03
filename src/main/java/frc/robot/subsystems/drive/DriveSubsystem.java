@@ -3,8 +3,6 @@ package frc.robot.subsystems.drive;
 import java.io.File;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
 
 import org.lasarobotics.fsm.StateMachine;
 import org.lasarobotics.fsm.SystemState;
@@ -91,7 +89,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private double m_autoLeftY;
     private double m_autoRightX;
     private boolean m_autoOverrideActive;
-    private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {1.0, 1.0, 1.0};
+    private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {2.0, 2.0, 2.0};
     private static final double AUTO_STAGE_LINE_OFFSET_METERS = 0.9271;
     private static final double AUTO_STAGE_HOLD_SEC = 0.0;
     private static final double AUTO_STAGE_TIMEOUT_SEC = 2.5;
@@ -233,7 +231,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         swerveDrive.resetOdometry(new Pose2d());
     }
 
-    private void goTo(Pose2d target) {
+    private double goTo(Pose2d target) {
         Logger.recordOutput("DriveSubsystem/Odometry/target", target);
 
         Pose2d robotPose = swerveDrive.getPose();
@@ -274,7 +272,8 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         if(Math.abs(distance) < 0.2 && Math.abs(robotPose.getRotation().getRadians() - target.getRotation().getRadians()) < 0.1) {
             m_shouldGoTo = false;
         }
-
+        
+        return distance;
     }
 
     private void updateAutoSequence() {
@@ -391,7 +390,6 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         boolean headingReached = Math.abs(headingError) < AUTO_HEADING_TOLERANCE_RAD;
         boolean timedOut = (Timer.getFPGATimestamp() - m_autoStageTimeoutStart) > AUTO_STAGE_TIMEOUT_SEC;
         boolean crossedLine = hasCrossedProgressionLine(targetPose);
-
         if ((positionReached && headingReached) || timedOut || crossedLine) {
             m_autoStage++;
             if (m_autoStage >= m_autoTargets.length) {
@@ -409,27 +407,21 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoRightX = rotationCmd;
         m_autoOverrideActive = true;
     }
-
     private boolean hasCrossedProgressionLine(Pose2d target) {
         Pose2d current = swerveDrive.getPose();
-        double dxStart = target.getX() - m_autoStageStartPose.getX();
-        double dyStart = target.getY() - m_autoStageStartPose.getY();
-        boolean useXAsPrimary = Math.abs(dxStart) >= Math.abs(dyStart);
-        double offset = AUTO_STAGE_LINE_OFFSET_METERS;
-
-        if (useXAsPrimary) {
-            double approachDir = Math.signum(dxStart == 0.0 ? 1.0 : dxStart);
-            double lineX = target.getX() - (offset * approachDir);
-            return approachDir > 0
-                ? current.getX() >= lineX
-                : current.getX() <= lineX;
+        double approachDir = Math.signum(target.getY() - current.getY()); //checking if the approachdir is 0, 0 means it is equal to 0 -1 = negative number +1 = positive number, 0 means not going anywhere and not crossed line
+        if (approachDir == 0.0) {
+            return false; // not going towards the pos for ramp
         }
 
-        double approachDir = Math.signum(dyStart == 0.0 ? 1.0 : dyStart);
-        double lineY = target.getY() - (offset * approachDir);
-        return approachDir > 0
-            ? current.getY() >= lineY
-            : current.getY() <= lineY;
+        double lineY = target.getY() + (approachDir * AUTO_STAGE_LINE_OFFSET_METERS);
+        double currentY = current.getY();
+
+        boolean crossed = approachDir > 0 //will set crossed to currentY >= lineY otherwise it will set crossed to currentY <= lineY.
+            ? currentY >= lineY
+            : currentY <= lineY;
+        Logger.recordOutput("DriveSubsystem/Line/Crossed", crossed); // log if it has crossed the line or not, i think it will do a green dot for true and red for false
+        return crossed;
     }
 
     public void zeroGyro() {
