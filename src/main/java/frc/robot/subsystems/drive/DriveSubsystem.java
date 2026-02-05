@@ -103,6 +103,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private double m_autoStageHoldStart;
     private double m_autoStageTimeoutStart;
     private Pose2d m_autoStageStartPose = new Pose2d();
+    private Pose2d m_startPosRobot; // for ramp approach
     private static SwerveRequest.FieldCentric s_driveRobotCentric;
 
 
@@ -345,6 +346,10 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
 
     private void beginAutoStage() {
         m_autoStageStartPose = swerveDrive.getPose();
+        m_startPosRobot = null;
+        if (m_startPosRobot == null) {
+            m_startPosRobot = swerveDrive.getPose();
+        }
         m_autoStageTimeoutStart = Timer.getFPGATimestamp();
         m_autoLeftY = 0.0;
         m_autoLeftX = 0.0;
@@ -408,18 +413,21 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
         m_autoOverrideActive = true;
     }
     private boolean hasCrossedProgressionLine(Pose2d target) {
+
         Pose2d current = swerveDrive.getPose();
-        double approachDir = Math.signum(target.getY() - current.getY()); //checking if the approachdir is 0, 0 means it is equal to 0 -1 = negative number +1 = positive number, 0 means not going anywhere and not crossed line
+        double approachDir = Math.signum(target.getX() - m_startPosRobot.getX()); //checking if the approachdir is 0, 0 means it is equal to 0 -1 = negative number +1 = positive number, 0 means not going anywhere and not crossed line
         if (approachDir == 0.0) {
             return false; // not going towards the pos for ramp
         }
+        Logger.recordOutput("DriveSubsystem/PosTarget/target", target);
+        Logger.recordOutput("DriveSubsystem/PosTarget/current", current);
 
-        double lineY = target.getY() + (approachDir * AUTO_STAGE_LINE_OFFSET_METERS);
-        double currentY = current.getY();
+        double lineX = target.getX();
+        double currentX = current.getX();
 
         boolean crossed = approachDir > 0 //will set crossed to currentY >= lineY otherwise it will set crossed to currentY <= lineY.
-            ? currentY >= lineY
-            : currentY <= lineY;
+            ? currentX >= lineX
+            : currentX <= lineX;
         Logger.recordOutput("DriveSubsystem/Line/Crossed", crossed); // log if it has crossed the line or not, i think it will do a green dot for true and red for false
         return crossed;
     }
