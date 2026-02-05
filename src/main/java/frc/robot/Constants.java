@@ -23,6 +23,8 @@ public final class Constants {
   public static final double EPSILON = 0.000001; // lgtm
   public static final Rotation2d ROT_45 = new Rotation2d(Math.PI / 4);
   public static final Rotation2d ROT_0 = new Rotation2d(0);
+    public static final Rotation2d ROT_20 = new Rotation2d(-20);
+        public static final Rotation2d ROT_20neg = new Rotation2d(20);
   public static final double GO_OVER_RAMP_SPEED_SCALAR = 0.5;
   public static final double GO_DOWN_RAMP_SPEED_SCALAR = 0.5;
   private static final double RAMP_RED_BASE_X = 11.938;
@@ -31,7 +33,7 @@ public final class Constants {
   private static final double RAMP_HIGH_Y = 5.546344;
   private static final double POS_A_OFFSET_RED_X = 0.908304;
   private static final double POS_A_OFFSET_BLUE_X = -0.986536;
-  private static final double POS_B_OFFSET_X = 0.1524;
+  private static final double POS_B_OFFSET_X = 0.1524 + 0.51; // was 0.1524
   private static final double POS_C_OFFSET_X = 1.0668+0.1524;
 
   public static final Pose2d AZ_rampRed1_posa = new Pose2d(RAMP_RED_BASE_X + POS_A_OFFSET_RED_X, RAMP_LOW_Y, new Rotation2d(-3 * Math.PI / 4));
@@ -44,10 +46,10 @@ public final class Constants {
   public static final Pose2d AZ_rampBlue1_posb = new Pose2d(RAMP_BLUE_BASE_X + POS_B_OFFSET_X, RAMP_LOW_Y, ROT_45);
   public static final Pose2d AZ_rampBlue2_posb = new Pose2d(RAMP_BLUE_BASE_X + POS_B_OFFSET_X, RAMP_HIGH_Y, ROT_45);
 
-  public static final Pose2d AZ_rampRed1_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_LOW_Y, new Rotation2d(-Math.PI));
-  public static final Pose2d AZ_rampRed2_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_HIGH_Y, new Rotation2d(-Math.PI));
-  public static final Pose2d AZ_rampBlue1_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_LOW_Y, ROT_0);
-  public static final Pose2d AZ_rampBlue2_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_HIGH_Y, ROT_0);
+  public static final Pose2d AZ_rampRed1_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_LOW_Y, ROT_20neg);
+  public static final Pose2d AZ_rampRed2_posc = new Pose2d(RAMP_RED_BASE_X - POS_C_OFFSET_X, RAMP_HIGH_Y, ROT_20neg);
+  public static final Pose2d AZ_rampBlue1_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_LOW_Y, ROT_20);
+  public static final Pose2d AZ_rampBlue2_posc = new Pose2d(RAMP_BLUE_BASE_X + POS_C_OFFSET_X, RAMP_HIGH_Y, ROT_20);
 
   public static final Pose2d[] AZ_RAMP_POSA_CANDIDATES = new Pose2d[] {
       AZ_rampRed1_posa, AZ_rampRed2_posa, AZ_rampBlue1_posa, AZ_rampBlue2_posa

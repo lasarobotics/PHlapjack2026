@@ -89,7 +89,7 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
     private double m_autoLeftY;
     private double m_autoRightX;
     private boolean m_autoOverrideActive;
-    private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {2.0, 2.0, 2.0};
+    private static final double[] AUTO_STAGE_MAX_SPEED_MPS = {1.75, 1.75, 0.75};
     private static final double AUTO_STAGE_LINE_OFFSET_METERS = 0.9271;
     private static final double AUTO_STAGE_HOLD_SEC = 0.0;
     private static final double AUTO_STAGE_TIMEOUT_SEC = 2.5;
