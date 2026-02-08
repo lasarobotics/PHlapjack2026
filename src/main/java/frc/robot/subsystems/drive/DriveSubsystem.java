@@ -304,37 +304,74 @@ public class DriveSubsystem extends StateMachine implements AutoCloseable {
 
     private void startAutoSequence() {
         Pose2d current = swerveDrive.getPose();
-        Pose2d[] candidates = Constants.AZ_RAMP_POSA_CANDIDATES;
-        double bestDistance = Double.MAX_VALUE;
-        int bestIndex = 0;
-        for (int i = 0; i < candidates.length; i++) {
-            double dist = current.getTranslation().getDistance(candidates[i].getTranslation());
-            if (dist < bestDistance) {
-                bestDistance = dist;
-                bestIndex = i;
+        Pose2d[] azCandidates = Constants.AZ_RAMP_POSA_CANDIDATES;
+        Pose2d[] nzCandidates = Constants.NZ_RAMP_POSA_CANDIDATES;
+        double bestAzDistance = Double.MAX_VALUE;
+        int bestAzIndex = 0;
+        for (int i = 0; i < azCandidates.length; i++) {
+            double dist = current.getTranslation().getDistance(azCandidates[i].getTranslation());
+            if (dist < bestAzDistance) {
+                bestAzDistance = dist;
+                bestAzIndex = i;
             }
         }
+        double bestNzDistance = Double.MAX_VALUE;
+        int bestNzIndex = 0;
+        for (int i = 0; i < nzCandidates.length; i++) {
+            double dist = current.getTranslation().getDistance(nzCandidates[i].getTranslation());
+            if (dist < bestNzDistance) {
+                bestNzDistance = dist;
+                bestNzIndex = i;
+            }
+        }
+        boolean useNz = bestNzDistance < bestAzDistance;
+        int bestIndex = useNz ? bestNzIndex : bestAzIndex;
 
-        switch (bestIndex) {
-            case 0 -> {
-                m_autoTargets[0] = Constants.AZ_rampRed1_posa;
-                m_autoTargets[1] = Constants.AZ_rampRed1_posb;
-                m_autoTargets[2] = Constants.AZ_rampRed1_posc;
+        if (useNz) {
+            switch (bestIndex) {
+                case 0 -> {
+                    m_autoTargets[0] = Constants.NZ_rampRed1_posa;
+                    m_autoTargets[1] = Constants.NZ_rampRed1_posb;
+                    m_autoTargets[2] = Constants.NZ_rampRed1_posc;
+                }
+                case 1 -> {
+                    m_autoTargets[0] = Constants.NZ_rampRed2_posa;
+                    m_autoTargets[1] = Constants.NZ_rampRed2_posb;
+                    m_autoTargets[2] = Constants.NZ_rampRed2_posc;
+                }
+                case 2 -> {
+                    m_autoTargets[0] = Constants.NZ_rampBlue1_posa;
+                    m_autoTargets[1] = Constants.NZ_rampBlue1_posb;
+                    m_autoTargets[2] = Constants.NZ_rampBlue1_posc;
+                }
+                case 3 -> {
+                    m_autoTargets[0] = Constants.NZ_rampBlue2_posa;
+                    m_autoTargets[1] = Constants.NZ_rampBlue2_posb;
+                    m_autoTargets[2] = Constants.NZ_rampBlue2_posc;
+                }
             }
-            case 1 -> {
-                m_autoTargets[0] = Constants.AZ_rampRed2_posa;
-                m_autoTargets[1] = Constants.AZ_rampRed2_posb;
-                m_autoTargets[2] = Constants.AZ_rampRed2_posc;
-            }
-            case 2 -> {
-                m_autoTargets[0] = Constants.AZ_rampBlue1_posa;
-                m_autoTargets[1] = Constants.AZ_rampBlue1_posb;
-                m_autoTargets[2] = Constants.AZ_rampBlue1_posc;
-            }
-            case 3 -> {
-                m_autoTargets[0] = Constants.AZ_rampBlue2_posa;
-                m_autoTargets[1] = Constants.AZ_rampBlue2_posb;
-                m_autoTargets[2] = Constants.AZ_rampBlue2_posc;
+        } else {
+            switch (bestIndex) {
+                case 0 -> {
+                    m_autoTargets[0] = Constants.AZ_rampRed1_posa;
+                    m_autoTargets[1] = Constants.AZ_rampRed1_posb;
+                    m_autoTargets[2] = Constants.AZ_rampRed1_posc;
+                }
+                case 1 -> {
+                    m_autoTargets[0] = Constants.AZ_rampRed2_posa;
+                    m_autoTargets[1] = Constants.AZ_rampRed2_posb;
+                    m_autoTargets[2] = Constants.AZ_rampRed2_posc;
+                }
+                case 2 -> {
+                    m_autoTargets[0] = Constants.AZ_rampBlue1_posa;
+                    m_autoTargets[1] = Constants.AZ_rampBlue1_posb;
+                    m_autoTargets[2] = Constants.AZ_rampBlue1_posc;
+                }
+                case 3 -> {
+                    m_autoTargets[0] = Constants.AZ_rampBlue2_posa;
+                    m_autoTargets[1] = Constants.AZ_rampBlue2_posb;
+                    m_autoTargets[2] = Constants.AZ_rampBlue2_posc;
+                }
             }
         }
 
